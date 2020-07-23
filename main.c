@@ -6,11 +6,11 @@
 #include <string.h>
 
 
-//number_of_files
 //name of files in the directory
 // reading data from files
 // storing information in database
 
+void readAndWrite(int num, char *names[]);
 int countigFiles();
 void nameOfTheFiles(char *names[]);
 
@@ -35,6 +35,8 @@ int main(int args, char *argv[]){
         char *fileName[filesNumber];
         nameOfTheFiles(fileName);
         printf("3\n");
+          //reading files and storing them in the database
+        readAndWrite(filesNumber, fileName);
 
     }
 
@@ -88,4 +90,27 @@ void nameOfTheFiles(char *names[]){
     closedir(dr); 
 }
 
- 
+      
+
+void readAndWrite(int num, char *name[]){
+    FILE *fp;
+
+
+    for(int i=0 ; i<num ; i++){
+        char str[140] = "./tmp/final_project/";
+        strcat(str, name[i]);
+        printf("%c   ", *name[i]);
+        if((*name[i]) == 'r'){
+            char buff[255];
+            fp = fopen(str, "r");
+            while(fgets(buff, 255, fp) != null){
+
+
+            }
+            fclose(fp);
+            return;
+        }
+    }
+}
+
+
