@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-// #include <libpq-fe.h>
+#include <libpq-fe.h>
 #include <dirent.h>
 #include <unistd.h>
 #include <string.h>
@@ -9,12 +9,24 @@
 //name of files in the directory
 // reading data from files
 // storing information in database
-
+void writingRecordsInto_fp_stores_dataTable(char **info);
+void splittingOneLineOfFile(char buff[], char **info);
 void readAndWrite(int num, char *names[]);
 int countigFiles();
 void nameOfTheFiles(char *names[]);
 
+PGconn *conn; 
+
 int main(int args, char *argv[]){
+
+    conn = PQconnectdb("user=amin password=J4T823AWZ dbname=fpdb");
+    if (PQstatus(conn) == CONNECTION_BAD) { 
+        fprintf(stderr, "Connection to database failed: %s\n",
+            PQerrorMessage(conn));
+        PQfinish(conn);
+        exit(1);
+    }
+
     int filesNumber;
     char str[5] = "hel";
     printf("%s", str);
@@ -23,21 +35,17 @@ int main(int args, char *argv[]){
 
     while(1){
         //50 seconds delay
-        printf("0\n");
         sleep(1);
 
-        printf("1\n");
         // finding out number of files in the directory
         filesNumber = countigFiles();
-        printf("2\nnum %d  \n", filesNumber);
-
         //finding out names of the files
         char *fileName[filesNumber];
         nameOfTheFiles(fileName);
-        printf("3\n");
           //reading files and storing them in the database
         readAndWrite(filesNumber, fileName);
-
+        PQfinish(conn);
+        return 0;
     }
 
     // int lib_ver = PQlibVersion();
@@ -94,17 +102,28 @@ void nameOfTheFiles(char *names[]){
 
 void readAndWrite(int num, char *name[]){
     FILE *fp;
-
-
     for(int i=0 ; i<num ; i++){
         char str[140] = "./tmp/final_project/";
         strcat(str, name[i]);
-        printf("%c   ", *name[i]);
         if((*name[i]) == 'r'){
             char buff[255];
             fp = fopen(str, "r");
-            while(fgets(buff, 255, fp) != null){
-
+            int temp=0;
+            while(fgets(buff, 255, fp) != NULL){
+                char *info[8];
+                for(int i=0 ; i<8 ; i++){
+                    info[i] = (char *)malloc(50 * sizeof(char));
+                }
+                splittingOneLineOfFile(buff, info);
+                // printf("%s \n", info[0]);
+                // printf("%s \n", info[1]);
+                // printf("%s \n", info[2]);
+                // printf("%s \n", info[3]);
+                // printf("%s \n", info[4]);
+                // printf("%s \n", info[5]);
+                // printf("%s \n", info[6]);
+                // printf("\n    %s \n",info[7]);
+                writingRecordsInto_fp_stores_dataTable(info);
 
             }
             fclose(fp);
@@ -114,3 +133,60 @@ void readAndWrite(int num, char *name[]){
 }
 
 
+void splittingOneLineOfFile(char buff[], char **info){
+    char temp[50];
+    int  numberOfString=0, count=0;
+    for(int i=0 ; i<7 ; i++){
+        char temp[50];
+        for(int j=0 ; buff[count] != ',' ; j++){
+            temp[j] = buff[count];
+            temp[j+1]= '\0';
+            count++;
+        }
+        strcpy(info[numberOfString], temp);
+        numberOfString++;
+        count++;
+    }
+    int i=0;
+    while(buff[count] != '\n'){
+        temp[i] = buff[count];
+        temp[i+1] = '\0';
+        count++;
+        i++;
+    }
+    strcpy(info[7],temp);
+}
+
+
+
+void writingRecordsInto_fp_stores_dataTable( char **info){
+    char *string = (char *)malloc(250 * sizeof(char));
+    strcat(string, "INSERT INTO fp_store_data VALUES('");
+    strcat(string,*info);
+    strcat(string,"', '");
+    strcat(string,info[1]);
+    strcat(string,"' , '" );
+    strcat(string,info[2]);
+    strcat(string,"' , '" );
+    strcat(string,info[3]);
+    strcat(string,"' , '" );
+    strcat(string,info[4]);
+    strcat(string,"' , '" );
+    strcat(string,info[5]);
+    strcat(string,"' , '" );
+    strcat(string,info[6]);
+    strcat(string,"' , '" );
+    strcat(string,info[7]);
+    strcat(string,"')");
+
+
+
+    printf("%s  \n", string);
+    PGresult *res = PQexec(conn, string);
+    // if (PQresultStatus(res) != PGRES_COMMAND_OK) {  
+    //     printf("hello world");
+    //     PQclear(res);
+    //     PQfinish(conn);
+    //     exit(1);
+    // } 
+}
