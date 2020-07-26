@@ -32,7 +32,6 @@ int main(int args, char *argv[]){
 
     int filesNumber;
     char str[5] = "hel";
-    printf("%s", str);
     // because there will be a report every 60 seconds, we run this code every 50 seconds.
     printf("\nhello world\n");
 
@@ -117,15 +116,10 @@ void readAndWrite(int num, char *name[]){
                 for(int i=0 ; i<8 ; i++){
                     info[i] = (char *)malloc(50 * sizeof(char));
                 }
-                printf("11\n");
                 splittingOneLineOfFile(buff, info);
-                printf("11\n");
                 writingRecordsInto_fp_stores_dataTable(info);
-                printf("11\n");
                 writingRecordsInto_fp_city_aggregationTable(info);
-                printf("11\n");
                 writingRecordsInto_fp_store_aggregationTable(info);
-                printf("1\n");
             }
             fclose(fp);
             return;
@@ -183,13 +177,11 @@ void writingRecordsInto_fp_stores_dataTable( char **info){
 
 
     PGresult *res = PQexec(conn, string);
-    printf("22\n");
     // if (PQresultStatus(res) != PGRES_COMMAND_OK) {  
     //     PQclear(res);
     //     PQfinish(conn);
     //     exit(1);
     // } 
-    printf("11\n");
 
 }
 
