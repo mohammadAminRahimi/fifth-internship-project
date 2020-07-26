@@ -9,6 +9,10 @@
 //name of files in the directory
 // reading data from files
 // storing information in database
+int strToInt(char *string);
+void intToStr(char* str, int num);
+void writingRecordsInto_fp_city_aggregationTable(char **info);
+void writingRecordsInto_fp_store_aggregationTable(char **info);
 void writingRecordsInto_fp_stores_dataTable(char **info);
 void splittingOneLineOfFile(char buff[], char **info);
 void readAndWrite(int num, char *names[]);
@@ -18,7 +22,6 @@ void nameOfTheFiles(char *names[]);
 PGconn *conn; 
 
 int main(int args, char *argv[]){
-
     conn = PQconnectdb("user=amin password=J4T823AWZ dbname=fpdb");
     if (PQstatus(conn) == CONNECTION_BAD) { 
         fprintf(stderr, "Connection to database failed: %s\n",
@@ -115,16 +118,11 @@ void readAndWrite(int num, char *name[]){
                     info[i] = (char *)malloc(50 * sizeof(char));
                 }
                 splittingOneLineOfFile(buff, info);
-                // printf("%s \n", info[0]);
-                // printf("%s \n", info[1]);
-                // printf("%s \n", info[2]);
-                // printf("%s \n", info[3]);
-                // printf("%s \n", info[4]);
-                // printf("%s \n", info[5]);
-                // printf("%s \n", info[6]);
-                // printf("\n    %s \n",info[7]);
                 writingRecordsInto_fp_stores_dataTable(info);
-
+                //writingRecordsInto_fp_city_aggregationTable(info);
+                writingRecordsInto_fp_store_aggregationTable(info);
+                fclose(fp);
+                return;
             }
             fclose(fp);
             return;
@@ -181,12 +179,96 @@ void writingRecordsInto_fp_stores_dataTable( char **info){
 
 
 
-    printf("%s  \n", string);
     PGresult *res = PQexec(conn, string);
-    // if (PQresultStatus(res) != PGRES_COMMAND_OK) {  
-    //     printf("hello world");
-    //     PQclear(res);
-    //     PQfinish(conn);
-    //     exit(1);
-    // } 
+    if (PQresultStatus(res) != PGRES_COMMAND_OK) {  
+        PQclear(res);
+        PQfinish(conn);
+        exit(1);
+    } 
+}
+
+
+void writingRecordsInto_fp_city_aggregationTable(char **info){
+
+
+ }
+
+
+
+void writingRecordsInto_fp_store_aggregationTable(char **info){
+    char *string = (char *)malloc(250 * sizeof(char));
+    char market[20], product[20], tot_price[20];
+    strcpy(market,info[3]);
+    strcpy(product,info[4]);
+    strcat(string, "select * from fp_store_aggregation where market_id = '");
+    strcat(string, market);
+    strcat(string, "' and product_id = '");
+    strcat(string, product);
+    strcat(string, "'");
+    PGresult *res = PQexec(conn,string);
+    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+        PQclear(res);
+        PQfinish(conn);
+        exit(1);
+    }    
+    int rows = PQntuples(res);
+    if(rows == 0){
+        string[0]='\0';
+        strcat(string, "INSERT INTO fp_store_aggregation VALUES('");
+        strcat(string,market);
+        strcat(string, "' , '");
+        strcat(string, product);
+        strcat(string, "' , '");
+        strcat(string, info[7]);
+        strcat(string, "' , '");
+        int num = strToInt(info[5])* strToInt(info[7]);
+        char str[12];
+        intToStr(str, num);
+        strcat(string, str);
+        strcat(string, "')");
+        PGresult *res = PQexec(conn, string);
+        if (PQresultStatus(res) != PGRES_COMMAND_OK) {  
+            printf("it's really bad");
+            PQclear(res);
+            PQfinish(conn);
+            exit(1);
+        } 
+    }else if(rows == 1){
+        char price[12];
+        intToStr(price, strToInt(info[5]) * strToInt(info[7]) + strToInt(PQgetvalue(res, 0, 3)));
+        char has_sold[12];
+        intToStr(has_sold, strToInt(info[7]) + strToInt(PQgetvalue(res, 0, 2)));
+        string[0] = '\0';
+        strcat(string, "update fp_store_aggregation set has_sold = '");
+        strcat(string,has_sold);
+        strcat(string,"' , tot_price = '");
+        strcat(string,price);
+        strcat(string, "' where market_id = '");
+        strcat(string, market);
+        strcat(string, "' and product_id = '");
+        strcat(string, product);
+        strcat(string, "'");
+        PGresult *res = PQexec(conn, string);       
+        if (PQresultStatus(res) != PGRES_COMMAND_OK) {  
+            printf("it's really bad \n");
+            PQclear(res);
+            PQfinish(conn);
+            exit(1);
+        } 
+        PQclear(res);
+    } else{
+        printf("%d tuples is chosen!!!", rows);
+    }
+}
+
+
+int strToInt(char *string){
+    int num;
+    sscanf(string,"%d", &num);
+    return num;
+}
+
+void intToStr(char* str,int num){
+    sprintf(str, "%d", num);
+    return;
 }
