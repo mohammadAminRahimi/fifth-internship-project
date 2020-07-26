@@ -22,7 +22,7 @@ void nameOfTheFiles(char *names[]);
 PGconn *conn; 
 
 int main(int args, char *argv[]){
-    conn = PQconnectdb("user=amin password=J4T823AWZ dbname=fpdb");
+    conn = PQconnectdb("user=amin  dbname=fpdb");
     if (PQstatus(conn) == CONNECTION_BAD) { 
         fprintf(stderr, "Connection to database failed: %s\n",
             PQerrorMessage(conn));
