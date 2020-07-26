@@ -117,10 +117,15 @@ void readAndWrite(int num, char *name[]){
                 for(int i=0 ; i<8 ; i++){
                     info[i] = (char *)malloc(50 * sizeof(char));
                 }
+                printf("11\n");
                 splittingOneLineOfFile(buff, info);
+                printf("11\n");
                 writingRecordsInto_fp_stores_dataTable(info);
+                printf("11\n");
                 writingRecordsInto_fp_city_aggregationTable(info);
+                printf("11\n");
                 writingRecordsInto_fp_store_aggregationTable(info);
+                printf("1\n");
             }
             fclose(fp);
             return;
@@ -157,9 +162,9 @@ void splittingOneLineOfFile(char buff[], char **info){
 
 void writingRecordsInto_fp_stores_dataTable( char **info){
     char *string = (char *)malloc(250 * sizeof(char));
-    strcat(string, "INSERT INTO fp_store_data VALUES('");
+    strcat(string, "INSERT INTO fp_stores_data VALUES(");
     strcat(string,*info);
-    strcat(string,"', '");
+    strcat(string,", '");
     strcat(string,info[1]);
     strcat(string,"' , '" );
     strcat(string,info[2]);
@@ -167,22 +172,25 @@ void writingRecordsInto_fp_stores_dataTable( char **info){
     strcat(string,info[3]);
     strcat(string,"' , '" );
     strcat(string,info[4]);
-    strcat(string,"' , '" );
+    strcat(string,"' , " );
     strcat(string,info[5]);
-    strcat(string,"' , '" );
+    strcat(string," , " );
     strcat(string,info[6]);
-    strcat(string,"' , '" );
+    strcat(string," , " );
     strcat(string,info[7]);
-    strcat(string,"')");
+    strcat(string,")");
 
 
 
     PGresult *res = PQexec(conn, string);
-    if (PQresultStatus(res) != PGRES_COMMAND_OK) {  
-        PQclear(res);
-        PQfinish(conn);
-        exit(1);
-    } 
+    printf("22\n");
+    // if (PQresultStatus(res) != PGRES_COMMAND_OK) {  
+    //     PQclear(res);
+    //     PQfinish(conn);
+    //     exit(1);
+    // } 
+    printf("11\n");
+
 }
 
 
@@ -195,9 +203,9 @@ void writingRecordsInto_fp_city_aggregationTable(char **info){
     strcpy(price,info[5]);
     strcpy(quantity,info[6]);
     strcpy(has_sold,info[7]);
-    strcat(string, "select * from fp_city_aggregation where time = '");
+    strcat(string, "select * from fp_city_aggregation where time = ");
     strcat(string, time);
-    strcat(string, "' and product_id = '");
+    strcat(string, " and product_id = '");
     strcat(string, product);
     strcat(string, "' and city = '");
     strcat(string, city);
@@ -211,22 +219,22 @@ void writingRecordsInto_fp_city_aggregationTable(char **info){
     int rows = PQntuples(res);
     if(rows == 0){
         string[0]='\0';
-        strcat(string, "INSERT INTO fp_city_aggregation VALUES('");
+        strcat(string, "INSERT INTO fp_city_aggregation VALUES(");
         strcat(string,time);
-        strcat(string, "' , '");
+        strcat(string, " , '");
         strcat(string, city);
         strcat(string, "' , '");
         strcat(string, product);
-        strcat(string, "' , '");
+        strcat(string, "' , ");
         strcat(string, price);
-        strcat(string, "' , '");        
+        strcat(string, " , ");        
         strcat(string, quantity);
-        strcat(string, "' , '");
+        strcat(string, " , ");
         strcat(string, has_sold);
-        strcat(string, "')");
+        strcat(string, ")");
         PGresult *res = PQexec(conn, string);
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {  
-            printf("it's really bad");
+            printf("it's really badd");
             PQclear(res);
             PQfinish(conn);
             exit(1);
@@ -243,23 +251,22 @@ void writingRecordsInto_fp_city_aggregationTable(char **info){
         intToStr(price, averagePrice);
 
         string[0] = '\0';
-        strcat(string, "update fp_city_aggregation set price = '");
+        strcat(string, "update fp_city_aggregation set price = ");
         strcat(string, price);
-        strcat(string,"' , quantity = '");
+        strcat(string," , quantity = ");
         strcat(string,quantity);
-        strcat(string,"' , has_sold = '");
+        strcat(string," , has_sold = ");
         strcat(string,has_sold);        
-        strcat(string, "' where city = '");
+        strcat(string, " where city = '");
         strcat(string, city);
         strcat(string, "' and product_id = '");
         strcat(string, product);
-        strcat(string, "' and time = '");
+        strcat(string, "' and time = ");
         strcat(string, time);
-        strcat(string, "'");
 
         PGresult *res = PQexec(conn, string);  
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {  
-            printf("it's really bad \n");
+            printf("it's really bad d \n");
             PQclear(res);
             PQfinish(conn);
             exit(1);
@@ -295,17 +302,17 @@ void writingRecordsInto_fp_store_aggregationTable(char **info){
         strcat(string,market);
         strcat(string, "' , '");
         strcat(string, product);
-        strcat(string, "' , '");
+        strcat(string, "' , ");
         strcat(string, info[7]);
-        strcat(string, "' , '");
+        strcat(string, " , ");
         int num = strToInt(info[5])* strToInt(info[7]);
         char str[12];
         intToStr(str, num);
         strcat(string, str);
-        strcat(string, "')");
+        strcat(string, ")");
         PGresult *res = PQexec(conn, string);
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {  
-            printf("it's really bad");
+            printf("it's really bad s");
             PQclear(res);
             PQfinish(conn);
             exit(1);
@@ -316,18 +323,18 @@ void writingRecordsInto_fp_store_aggregationTable(char **info){
         char has_sold[12];
         intToStr(has_sold, strToInt(info[7]) + strToInt(PQgetvalue(res, 0, 2)));
         string[0] = '\0';
-        strcat(string, "update fp_store_aggregation set has_sold = '");
+        strcat(string, "update fp_store_aggregation set has_sold = ");
         strcat(string,has_sold);
-        strcat(string,"' , tot_price = '");
+        strcat(string," , price = ");
         strcat(string,price);
-        strcat(string, "' where market_id = '");
+        strcat(string, " where market_id = '");
         strcat(string, market);
         strcat(string, "' and product_id = '");
         strcat(string, product);
         strcat(string, "'");
         PGresult *res = PQexec(conn, string);       
         if (PQresultStatus(res) != PGRES_COMMAND_OK) {  
-            printf("it's really bad \n");
+            printf("it's really bad mm\n");
             PQclear(res);
             PQfinish(conn);
             exit(1);
