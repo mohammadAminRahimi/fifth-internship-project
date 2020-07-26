@@ -119,10 +119,8 @@ void readAndWrite(int num, char *name[]){
                 }
                 splittingOneLineOfFile(buff, info);
                 writingRecordsInto_fp_stores_dataTable(info);
-                //writingRecordsInto_fp_city_aggregationTable(info);
+                writingRecordsInto_fp_city_aggregationTable(info);
                 writingRecordsInto_fp_store_aggregationTable(info);
-                fclose(fp);
-                return;
             }
             fclose(fp);
             return;
@@ -189,8 +187,87 @@ void writingRecordsInto_fp_stores_dataTable( char **info){
 
 
 void writingRecordsInto_fp_city_aggregationTable(char **info){
+    char *string = (char *)malloc(250 * sizeof(char));
+    char time[30], product[30], city[30], price[30], quantity[30], has_sold[30];
+    strcpy(time,info[0]);
+    strcpy(city,info[2]);
+    strcpy(product,info[4]);
+    strcpy(price,info[5]);
+    strcpy(quantity,info[6]);
+    strcpy(has_sold,info[7]);
+    strcat(string, "select * from fp_city_aggregation where time = '");
+    strcat(string, time);
+    strcat(string, "' and product_id = '");
+    strcat(string, product);
+    strcat(string, "' and city = '");
+    strcat(string, city);
+    strcat(string, "'");
+    PGresult *res = PQexec(conn,string);
+    if (PQresultStatus(res) != PGRES_TUPLES_OK) {
+        PQclear(res);
+        PQfinish(conn);
+        exit(1);
+    }    
+    int rows = PQntuples(res);
+    if(rows == 0){
+        string[0]='\0';
+        strcat(string, "INSERT INTO fp_city_aggregation VALUES('");
+        strcat(string,time);
+        strcat(string, "' , '");
+        strcat(string, city);
+        strcat(string, "' , '");
+        strcat(string, product);
+        strcat(string, "' , '");
+        strcat(string, price);
+        strcat(string, "' , '");        
+        strcat(string, quantity);
+        strcat(string, "' , '");
+        strcat(string, has_sold);
+        strcat(string, "')");
+        PGresult *res = PQexec(conn, string);
+        if (PQresultStatus(res) != PGRES_COMMAND_OK) {  
+            printf("it's really bad");
+            PQclear(res);
+            PQfinish(conn);
+            exit(1);
+        } 
+    } else if(rows == 1){
+        int tot_has_sold = strToInt(has_sold) + strToInt(PQgetvalue(res, 0, 5));
+        int averagePrice = (int)(((strToInt(price) * strToInt(has_sold)) + (strToInt(PQgetvalue(res, 0, 3)) * strToInt(PQgetvalue(res, 0, 5)))) / tot_has_sold);
+        int tot_quantity = strToInt(PQgetvalue(res, 0, 4)) + strToInt(quantity);
+        has_sold[0] = '\0';
+        quantity[0] = '\0';
+        price[0] = '\0';
+        intToStr(has_sold, tot_has_sold);
+        intToStr(quantity, tot_quantity);
+        intToStr(price, averagePrice);
 
+        string[0] = '\0';
+        strcat(string, "update fp_city_aggregation set price = '");
+        strcat(string, price);
+        strcat(string,"' , quantity = '");
+        strcat(string,quantity);
+        strcat(string,"' , has_sold = '");
+        strcat(string,has_sold);        
+        strcat(string, "' where city = '");
+        strcat(string, city);
+        strcat(string, "' and product_id = '");
+        strcat(string, product);
+        strcat(string, "' and time = '");
+        strcat(string, time);
+        strcat(string, "'");
 
+        PGresult *res = PQexec(conn, string);  
+        if (PQresultStatus(res) != PGRES_COMMAND_OK) {  
+            printf("it's really bad \n");
+            PQclear(res);
+            PQfinish(conn);
+            exit(1);
+        } 
+        PQclear(res);
+    } else {
+        printf("it is a bad news");
+    }
  }
 
 
