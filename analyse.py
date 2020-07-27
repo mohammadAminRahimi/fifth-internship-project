@@ -1,29 +1,31 @@
 import psycopg2
 import math 
-def most_favorite_product_in_every_town(cursor):
-    # print(i[0].decode('utf-8')[::-1])
 
+# this function helps us to find the product that are most wanted in every town
+def most_favorite_product_in_every_town(cursor):
+    # in this query we get the name of every city which there is in the database
     cursor.execute("select distinct city from fp_city_aggregation")
-    # print(cursor.fetchall())
     for i in cursor.fetchall():
         string = i[0]
+        # for the each city we find in the above query, we find out the best product in this query
         cursor.execute("select city, has_sold, product_id, price  from fp_city_aggregation where city ='" + string + "' and has_sold = (select Max(has_sold) from fp_city_aggregation where city ='" + string + "')" )
         lis = cursor.fetchall()
         city = lis[0][0]
         has_sold = lis[0][1]
         product_id = lis[0][2]
         price = lis[0][3]
+        # displaying information
         print("city = " + city.decode('utf-8')[::-1] + ",    product_id = " + product_id + ",  has_sold = "+ str(has_sold) 
         + ",  total_money_earned = "+ str(has_sold * price))
 
 
 
-
+# in this function we find the market which sells most
 def best_store_in_case_of_income(cursor):
-    
-
+    # in this query we get the name of every market which there is in the database
     cursor.execute("select  distinct market_id from fp_store_aggregation")
-
+    # in this query we sum the money that each market gain from selling every produt and then we select 
+    # the market which sells the most
     cursor.execute("select market_id, mprice from ( select market_id, Sum(price) as mprice " +
     "from fp_store_aggregation group by market_id) as table1 where mprice =" +
     " (select Max(nprice) from (select market_id, Sum(price) as nprice from fp_store_aggregation "+
@@ -31,14 +33,16 @@ def best_store_in_case_of_income(cursor):
     lis = cursor.fetchall()
     print("market_id = " + lis[0][0] + ",  income = " + str(lis[0][1]))
 
-
-def expensive_towns( cursor):
+# we find the town which the product has been sold there more expensive than other places
+def expensive_markets( cursor):
+    # at first we select all market 
     cursor.execute("select  distinct market_id from fp_store_aggregation")
     dic = dict()
     for i in cursor.fetchall():
         string = i[0]
         dic[string] = 0
-
+    # we select all products and then we loop through them
+    # and find out which market sells that product more expensive than other places
     cursor.execute("select  distinct product_id from fp_store_aggregation")
     for i in cursor.fetchall():
         string = i[0]
@@ -56,12 +60,11 @@ def expensive_towns( cursor):
     for i in dic.keys():
         if dic[i] == maxi:
             print("market with the id=" + i + " is the most expensive market")      
-
-def variance(li):
+# as the name of function suggests this function compute the standard deviation of a list of data
+def standard_deviation(li):
     num=0
     for i in range(len(li)):
         num += li[i]
-
     ave = num / len(li)
     num=0
     for i in range(len(li)):
@@ -71,19 +74,22 @@ def variance(li):
     num = num / ave
     return num
 
-
+# we find out the product which its price varies a lot
 def variable_product(cursor):
+    # at first we get all product in the db
     cursor.execute("select  distinct product_id from fp_store_aggregation")
     dic = dict()
     lis = cursor.fetchall()
     for i in lis:
         product = i[0]
         dic[product] = 0
+        # in this query we find out all the prices that a product has been sold and then we make a list of them
+        #  in the next step we give the list to a function and get standard deviation.
         cursor.execute("select price, has_sold from fp_stores_data where product_id ='"+ product +"'")
         lis = cursor.fetchall()
         for i in range(len(lis)):
             lis[i] = lis[i][0]/lis[i][1]
-        dic[product] = variance(lis)
+        dic[product] = standard_deviation(lis)
         if product == "9655":
             print(lis)
 
@@ -104,32 +110,38 @@ def ave(lis):
     return ans
 
 
-
-def    average_income_of_each_stores_of_a_city(cursor):
+# this function helps us to find out how much a market in in city sells on average
+def average_income_of_each_stores_of_a_city(cursor):
+    # at first we get all cities in the db
     cursor.execute("select distinct city from fp_city_aggregation")
     ans_dic = dict()
     for i in cursor.fetchall():
         city = i[0] 
         ans_dic[city] = 0
         lis = list()
+        # for each city we select all of its market
         cursor.execute("select distinct market_id from fp_stores_data where city='" +  city + "'")
         for j in cursor.fetchall():
             markets = j[0]
+            # we get total income of the markets in a city
             cursor.execute("select Sum(price) from fp_store_aggregation where market_id='" + markets + "'")
             lis.append(cursor.fetchall()[0][0])
-
+        # we calculate average income of markets of a city
         ans_dic[city] = ave(lis)
 
     for i in ans_dic.keys():
         print("average income of store in the city=" + i.decode('utf-8')[::-1] + " is " + str(ans_dic[i]))
 
 
-
+# we find out for each city what product is needed most
 def product_most_needed_in_each_city(cursor):
+    # at first we select all cities 
     cursor.execute("select distinct city from fp_city_aggregation")
     ans_dic = dict()
     for i in cursor.fetchall():
         city = i[0] 
+        # by the help of fp_city_aggregation table we get the product that is most needed
+        #  in each city (quantity of that product is real low so it is needed)
         cursor.execute("select  product_id from fp_city_aggregation where city = '" + city +
         "' and quantity=(select Min(quantity) from fp_city_aggregation where city = '" + city+"')")
         ans_dic[city] = cursor.fetchall()[0][0]
@@ -144,20 +156,20 @@ def product_most_needed_in_each_city(cursor):
 
 
 try:
+    # first of all we make the database connection
     connection = psycopg2.connect(user = "amin",
                                   password = "",
                                   host = "127.0.0.1",
                                   port = "5432",
                                   database = "fpdb")
     cursor = connection.cursor()
-
+    # we are goin to analyze data in the database in 6 ways by the help of below functions
     most_favorite_product_in_every_town(cursor)
     best_store_in_case_of_income(cursor)
-    expensive_towns(cursor)
+    expensive_markets(cursor)
     variable_product(cursor)
     average_income_of_each_stores_of_a_city(cursor)
     product_most_needed_in_each_city(cursor)
-
 except (Exception, psycopg2.Error) as error :
     print ("Error while connecting to PostgreSQL", error)
 finally:
