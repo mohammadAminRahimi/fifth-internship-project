@@ -94,6 +94,50 @@ def variable_product(cursor):
 
 
 
+def ave(lis):
+    ans = 0 
+    summ = 0
+    for i in lis:
+        summ += i
+
+    ans = summ / len(lis)
+    return ans
+
+
+
+def    average_income_of_each_stores_of_a_city(cursor):
+    cursor.execute("select distinct city from fp_city_aggregation")
+    ans_dic = dict()
+    for i in cursor.fetchall():
+        city = i[0] 
+        ans_dic[city] = 0
+        lis = list()
+        cursor.execute("select distinct market_id from fp_stores_data where city='" +  city + "'")
+        for j in cursor.fetchall():
+            markets = j[0]
+            cursor.execute("select Sum(price) from fp_store_aggregation where market_id='" + markets + "'")
+            lis.append(cursor.fetchall()[0][0])
+
+        ans_dic[city] = ave(lis)
+
+    for i in ans_dic.keys():
+        print("average income of store in the city=" + i.decode('utf-8')[::-1] + " is " + str(ans_dic[i]))
+
+
+
+def product_most_needed_in_each_city(cursor):
+    cursor.execute("select distinct city from fp_city_aggregation")
+    ans_dic = dict()
+    for i in cursor.fetchall():
+        city = i[0] 
+        cursor.execute("select  product_id from fp_city_aggregation where city = '" + city +
+        "' and quantity=(select Min(quantity) from fp_city_aggregation where city = '" + city+"')")
+        ans_dic[city] = cursor.fetchall()[0][0]
+
+
+    for i in ans_dic.keys():
+        print("in the " + i.decode('utf-8')[::-1]  +" product with the id=" + ans_dic[i] +
+        " is most needed")
 
 
 
@@ -111,6 +155,8 @@ try:
     best_store_in_case_of_income(cursor)
     expensive_towns(cursor)
     variable_product(cursor)
+    average_income_of_each_stores_of_a_city(cursor)
+    product_most_needed_in_each_city(cursor)
 
 except (Exception, psycopg2.Error) as error :
     print ("Error while connecting to PostgreSQL", error)
