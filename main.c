@@ -12,22 +12,22 @@ void intToStr(char* str, int num);
 void writingRecordsInto_fp_city_aggregationTable(char **info);
 void writingRecordsInto_fp_store_aggregationTable(char **info);
 void writingRecordsInto_fp_stores_dataTable(char **info);
-void splittingOneLineOfFile(char buff[], char **info);
+int splittingOneLineOfFile(char buff[], char **info);
 void readAndWrite(int num, char *names[]);
 int countigFiles();
 void nameOfTheFiles(char *names[]);
 
 // global database connection variable
-PGconn *conn; 
+PGconn *conn;
 
 /*
     in the main function we first make a database connection,
-    then we try to find out the the name of files in the directory, 
+    then we try to find out the the name of files in the directory,
     next we read the file and write them into databases using readAndWrite function.
 */
 int main(int args, char *argv[]){
     conn = PQconnectdb("user=amin  dbname=fpdb");
-    if (PQstatus(conn) == CONNECTION_BAD) { 
+    if (PQstatus(conn) == CONNECTION_BAD) {
         fprintf(stderr, "Connection to database failed: %s\n",
             PQerrorMessage(conn));
         PQfinish(conn);
@@ -52,23 +52,23 @@ int main(int args, char *argv[]){
     with the help of this function we find out the number of directory files
 */
 int countigFiles(){
-    int count=0; 
-        // opendir() returns a pointer of DIR type.  
-    DIR *dr = opendir("./tmp/final_project"); 
-    struct dirent *de; 
-    if (dr == NULL)  // opendir returns NULL if couldn't open directory 
-    { 
-        printf("Could not open current directory" ); 
-        return 0; 
-    } 
-    // Refer http://pubs.opengroup.org/onlinepubs/7990989775/xsh/readdir.html 
-    // for readdir() 
-    while ((de = readdir(dr)) != NULL) 
+    int count=0;
+        // opendir() returns a pointer of DIR type.
+    DIR *dr = opendir("/Users/amin/Desktop/fifth-internship-project/fifth-internship-project/tmp/final_project");
+    struct dirent *de;
+    if (dr == NULL)  // opendir returns NULL if couldn't open directory
+    {
+        printf("CccccCould not open current directory" ); 
+        return 0;
+    }
+    // Refer http://pubs.opengroup.org/onlinepubs/7990989775/xsh/readdir.html
+    // for readdir()
+    while ((de = readdir(dr)) != NULL)
         // we count the files which begin with r char because we want files with the name report ...
         if(de->d_name[0] == 'r'){
             count++;
         }
-    closedir(dr); 
+    closedir(dr);
     return count;
 }
 
@@ -77,30 +77,30 @@ int countigFiles(){
 */
 void nameOfTheFiles(char *names[]){
     int counter=0;
-    DIR *dr = opendir("./tmp/final_project"); 
-    struct dirent *de; 
-    if (dr == NULL)  // opendir returns NULL if couldn't open directory 
-    { 
-        printf("Could not open current directory" ); 
-        return; 
-    } 
+    DIR *dr = opendir("/Users/amin/Desktop/fifth-internship-project/fifth-internship-project/tmp/final_project");
+    struct dirent *de;
+    if (dr == NULL)  // opendir returns NULL if couldn't open directory
+    {
+        printf("how Could not open current directory" );
+        return;
+    }
     while ((de = readdir(dr)) != NULL){
-        // the files which begin with 'r' char are desirable 
+        // the files which begin with 'r' char are desirable
         if(de->d_name[0] == 'r'){
             names[counter] = de->d_name;
             counter++;
         }
     }
-    closedir(dr); 
+    closedir(dr);
 }
 
-      
+
 
 void readAndWrite(int num, char *name[]){
     FILE *fp;
-    // num varible shows the number of file so that this loop runs for each file, then read info of each file 
+    // num varible shows the number of file so that this loop runs for each file, then read info of each file
     for(int i=0 ; i<num ; i++){
-        char str[140] = "./tmp/final_project/";
+        char str[240] = "/Users/amin/Desktop/fifth-internship-project/fifth-internship-project/tmp/final_project/";
         strcat(str, name[i]);
         if((*name[i]) == 'r'){
             char buff[255];
@@ -116,10 +116,14 @@ void readAndWrite(int num, char *name[]){
                 we first read one recod of file using splittingOneLineOfFile function,
                 then we make changes to three database tables by the help of nex three function
                 */
-                splittingOneLineOfFile(buff, info);
-                writingRecordsInto_fp_stores_dataTable(info);
-                writingRecordsInto_fp_city_aggregationTable(info);
-                writingRecordsInto_fp_store_aggregationTable(info);
+                int res = splittingOneLineOfFile(buff, info);
+                if ( res == 0 ){
+                    printf("this recorde = %s was ignored \n", buff);
+                }else {
+                    writingRecordsInto_fp_stores_dataTable(info);
+                    writingRecordsInto_fp_city_aggregationTable(info);
+                    writingRecordsInto_fp_store_aggregationTable(info);
+                }
             }
             fclose(fp);
             return;
@@ -129,14 +133,17 @@ void readAndWrite(int num, char *name[]){
 
 /*
     each records of file has got 8 columns(attribute)
-    in this function we process each column and put every attribute into a char* 
+    in this function we process each column and put every attribute into a char*
 */
-void splittingOneLineOfFile(char buff[], char **info){
+int splittingOneLineOfFile(char buff[], char **info){
     char temp[50];
     int  numberOfString=0, count=0;
     for(int i=0 ; i<7 ; i++){
         char temp[50];
         for(int j=0 ; buff[count] != ',' ; j++){
+            if(buff[count] == '\0'){
+                return 0;
+            }
             temp[j] = buff[count];
             temp[j+1]= '\0';
             count++;
@@ -153,6 +160,7 @@ void splittingOneLineOfFile(char buff[], char **info){
         i++;
     }
     strcpy(info[7],temp);
+    return 1;
 }
 
 
@@ -182,7 +190,7 @@ void writingRecordsInto_fp_stores_dataTable( char **info){
 }
 
 /*
- making appropriate changes into fp_city_aggregation table when added processing a new recorde 
+ making appropriate changes into fp_city_aggregation table when added processing a new recorde
 */
 void writingRecordsInto_fp_city_aggregationTable(char **info){
     char *string = (char *)malloc(250 * sizeof(char));
@@ -209,10 +217,10 @@ void writingRecordsInto_fp_city_aggregationTable(char **info){
         PQclear(res);
         PQfinish(conn);
         exit(1);
-    }    
+    }
     int rows = PQntuples(res);
-    /* 
-    if rows variable is 0, it means that there is no rows with the same time and city and product_id 
+    /*
+    if rows variable is 0, it means that there is no rows with the same time and city and product_id
     in the database then we don't need to updata database we just need to insert record into databas
     */
     if(rows == 0){
@@ -225,24 +233,24 @@ void writingRecordsInto_fp_city_aggregationTable(char **info){
         strcat(string, product);
         strcat(string, "' , ");
         strcat(string, price);
-        strcat(string, " , ");        
+        strcat(string, " , ");
         strcat(string, quantity);
         strcat(string, " , ");
         strcat(string, has_sold);
         strcat(string, ")");
         PGresult *res = PQexec(conn, string);
-        if (PQresultStatus(res) != PGRES_COMMAND_OK) {  
+        if (PQresultStatus(res) != PGRES_COMMAND_OK) {
             printf("it's really badd");
             PQclear(res);
             PQfinish(conn);
             exit(1);
-        } 
+        }
     }
 
     /*
     if there is a row with the same  time and city and product_id, we must update the info in the database
     we add has_sold var in two record to make the new has_sold
-    we recalculate the average price of the product 
+    we recalculate the average price of the product
     we add quantity var in two record to make the new quantity
     */
      else if(rows == 1){
@@ -262,7 +270,7 @@ void writingRecordsInto_fp_city_aggregationTable(char **info){
         strcat(string," , quantity = ");
         strcat(string,quantity);
         strcat(string," , has_sold = ");
-        strcat(string,has_sold);        
+        strcat(string,has_sold);
         strcat(string, " where city = '");
         strcat(string, city);
         strcat(string, "' and product_id = '");
@@ -270,13 +278,13 @@ void writingRecordsInto_fp_city_aggregationTable(char **info){
         strcat(string, "' and time = ");
         strcat(string, time);
 
-        PGresult *res = PQexec(conn, string);  
-        if (PQresultStatus(res) != PGRES_COMMAND_OK) {  
+        PGresult *res = PQexec(conn, string);
+        if (PQresultStatus(res) != PGRES_COMMAND_OK) {
             printf("it's really bad d \n");
             PQclear(res);
             PQfinish(conn);
             exit(1);
-        } 
+        }
         PQclear(res);
     } else {
         printf("it is a bad news");
@@ -306,10 +314,10 @@ void writingRecordsInto_fp_store_aggregationTable(char **info){
         PQclear(res);
         PQfinish(conn);
         exit(1);
-    }    
+    }
     int rows = PQntuples(res);
     /*
-    if there is no record with the same market_id and product_id in the 
+    if there is no record with the same market_id and product_id in the
     database we insert the read record from file
     */
     if(rows == 0){
@@ -327,12 +335,12 @@ void writingRecordsInto_fp_store_aggregationTable(char **info){
         strcat(string, str);
         strcat(string, ")");
         PGresult *res = PQexec(conn, string);
-        if (PQresultStatus(res) != PGRES_COMMAND_OK) {  
+        if (PQresultStatus(res) != PGRES_COMMAND_OK) {
             printf("it's really bad s");
             PQclear(res);
             PQfinish(conn);
             exit(1);
-        } 
+        }
     }
     /*
     if there is a recorde with the same market_id and product_id in the database
@@ -355,13 +363,13 @@ void writingRecordsInto_fp_store_aggregationTable(char **info){
         strcat(string, "' and product_id = '");
         strcat(string, product);
         strcat(string, "'");
-        PGresult *res = PQexec(conn, string);       
-        if (PQresultStatus(res) != PGRES_COMMAND_OK) {  
+        PGresult *res = PQexec(conn, string);
+        if (PQresultStatus(res) != PGRES_COMMAND_OK) {
             printf("it's really bad mm\n");
             PQclear(res);
             PQfinish(conn);
             exit(1);
-        } 
+        }
         PQclear(res);
     } else{
         printf("%d tuples is chosen!!!", rows);
