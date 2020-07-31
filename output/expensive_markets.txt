@@ -1,0 +1,7 @@
+market with the id=106 is the most expensive market 
+market with the id=161 is the most expensive market 
+market with the id=938 is the most expensive market 
+market with the id=1102 is the most expensive market 
+market with the id=1673 is the most expensive market 
+market with the id=1201 is the most expensive market 
+market with the id=1368 is the most expensive market 

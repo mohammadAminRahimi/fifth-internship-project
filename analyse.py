@@ -3,6 +3,7 @@ import math
 
 # this function helps us to find the product that are most wanted in every town
 def most_favorite_product_in_every_town(cursor):
+    f = open("/Users/amin/Desktop/fifth-internship-project/fifth-internship-project/output/most_favorite_product_in_every_town.txt", "w")
     # in this query we get the name of every city which there is in the database
     cursor.execute("select distinct city from fp_city_aggregation")
     for i in cursor.fetchall():
@@ -15,13 +16,16 @@ def most_favorite_product_in_every_town(cursor):
         product_id = lis[0][2]
         price = lis[0][3]
         # displaying information
-        print("city = " + city.decode('utf-8')[::-1] + ",    product_id = " + product_id + ",  has_sold = "+ str(has_sold) 
-        + ",  total_money_earned = "+ str(has_sold * price))
 
-
+        # print("city = " + (city.decode('utf-8')[::-1]) + ",    product_id = " + product_id + ",  has_sold = "+ str(has_sold) 
+        # + ",  total_money_earned = "+ str(has_sold * price))
+        f.write("city = " + (city) + ",    product_id = " + product_id + ",  has_sold = "+ str(has_sold) 
+        + ",  total_money_earned = "+ str(has_sold * price) + '\n')
+    f.close()
 
 # in this function we find the market which sells most
 def best_store_in_case_of_income(cursor):
+    f = open("/Users/amin/Desktop/fifth-internship-project/fifth-internship-project/output/best_store_in_case_of_income.txt", "w")
     # in this query we get the name of every market which there is in the database
     cursor.execute("select  distinct market_id from fp_store_aggregation")
     # in this query we sum the money that each market gain from selling every produt and then we select 
@@ -31,10 +35,12 @@ def best_store_in_case_of_income(cursor):
     " (select Max(nprice) from (select market_id, Sum(price) as nprice from fp_store_aggregation "+
     "group by market_id) as table2)")
     lis = cursor.fetchall()
-    print("market_id = " + lis[0][0] + ",  income = " + str(lis[0][1]))
+    f.write("market_id = " + lis[0][0] + ",  income = " + str(lis[0][1]) + "\n")
+    f.close()
 
 # we find the town which the product has been sold there more expensive than other places
 def expensive_markets( cursor):
+    f = open("/Users/amin/Desktop/fifth-internship-project/fifth-internship-project/output/expensive_markets.txt", "w")
     # at first we select all market 
     cursor.execute("select  distinct market_id from fp_store_aggregation")
     dic = dict()
@@ -59,7 +65,8 @@ def expensive_markets( cursor):
     maxi = max(dic.values())
     for i in dic.keys():
         if dic[i] == maxi:
-            print("market with the id=" + i + " is the most expensive market")      
+            f.write("market with the id=" + i + " is the most expensive market \n")     
+    f.close
 # as the name of function suggests this function compute the standard deviation of a list of data
 def standard_deviation(li):
     num=0
@@ -76,6 +83,7 @@ def standard_deviation(li):
 
 # we find out the product which its price varies a lot
 def variable_product(cursor):
+    f = open("/Users/amin/Desktop/fifth-internship-project/fifth-internship-project/output/variable_product.txt", "w")
     # at first we get all product in the db
     cursor.execute("select  distinct product_id from fp_store_aggregation")
     dic = dict()
@@ -90,13 +98,11 @@ def variable_product(cursor):
         for i in range(len(lis)):
             lis[i] = lis[i][0]/lis[i][1]
         dic[product] = standard_deviation(lis)
-        if product == "9655":
-            print(lis)
-
     maxi = max(dic.values())
     for i in dic.keys():
         if dic[i] == maxi:
-            print("product with the id=" + i + " is the most variable product")      
+            f.write("product with the id=" + i + " is the most variable product\n")  
+    f.close()
 
 
 
@@ -112,6 +118,7 @@ def ave(lis):
 
 # this function helps us to find out how much a market in in city sells on average
 def average_income_of_each_stores_of_a_city(cursor):
+    f = open("/Users/amin/Desktop/fifth-internship-project/fifth-internship-project/output/average_income_of_each_stores_of_a_city.txt", "w")
     # at first we get all cities in the db
     cursor.execute("select distinct city from fp_city_aggregation")
     ans_dic = dict()
@@ -130,11 +137,12 @@ def average_income_of_each_stores_of_a_city(cursor):
         ans_dic[city] = ave(lis)
 
     for i in ans_dic.keys():
-        print("average income of store in the city=" + i.decode('utf-8')[::-1] + " is " + str(ans_dic[i]))
-
+        f.write("average income of store in the city=" + i + " is " + str(ans_dic[i]) + "\n")
+    f.close()
 
 # we find out for each city what product is needed most
 def product_most_needed_in_each_city(cursor):
+    f = open("/Users/amin/Desktop/fifth-internship-project/fifth-internship-project/output/product_most_needed_in_each_city.txt", "w")
     # at first we select all cities 
     cursor.execute("select distinct city from fp_city_aggregation")
     ans_dic = dict()
@@ -142,16 +150,18 @@ def product_most_needed_in_each_city(cursor):
         city = i[0] 
         # by the help of fp_city_aggregation table we get the product that is most needed
         #  in each city (quantity of that product is real low so it is needed)
-        cursor.execute("select  product_id from fp_city_aggregation where city = '" + city +
-        "' and quantity=(select Min(quantity) from fp_city_aggregation where city = '" + city+"')")
-        ans_dic[city] = cursor.fetchall()[0][0]
-
+        cursor.execute("select  product_id, quantity, has_sold from fp_city_aggregation where city = '" + city + "'" )
+        res = cursor.fetchall()
+        product, quantity, has_sold = res[0]
+        for i in res:
+            if quantity/has_sold < i[1]/i[2]:
+                product, quantity, has_sold = i
+        ans_dic[city] = product
 
     for i in ans_dic.keys():
-        print("in the " + i.decode('utf-8')[::-1]  +" product with the id=" + ans_dic[i] +
-        " is most needed")
-
-
+        f.write("in the " + i  +" product with the id=" + ans_dic[i] +
+        " is most needed\n")
+    f.close()
 
 
 

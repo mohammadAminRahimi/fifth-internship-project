@@ -1,0 +1,1 @@
+market_id = 1511,  income = 14875000
