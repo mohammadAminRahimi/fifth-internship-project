@@ -20,6 +20,94 @@ void nameOfTheFiles(char *names[]);
 // global database connection variable
 PGconn *conn;
 
+struct node {
+    char city[50];
+    char product_id[10];
+    char price[10];
+    char quantity[5];
+    char has_sold[5];
+    struct node *next;
+};
+
+void insertingInto_fp_city_aggregationTable(struct node **head, char *time){
+    printf("2 \n");
+    struct node *current = *head;
+    if(current == NULL){
+        return;
+    }
+    int count=0;
+    char string[250];
+    while(current != NULL){
+        count++;
+        string[0] = '\0';
+        strcat(string, "INSERT INTO fp_city_aggregation VALUES(");
+        strcat(string,time);
+        strcat(string, " , '");
+        strcat(string, current->city);
+        strcat(string, "' , '");
+        strcat(string, current->product_id);
+        strcat(string, "' , ");
+        strcat(string, current->price);
+        strcat(string, " , ");
+        strcat(string, current->quantity);
+        strcat(string, " , ");
+        strcat(string, current->has_sold);
+        strcat(string, ")");
+        PGresult *res = PQexec(conn, string); 
+        current = current->next;  
+    }
+}
+
+void addingNewNode(struct node **head, char **info){
+    if(*head == NULL){
+        struct node *newNode = (struct node*) malloc(sizeof(struct node));
+        strcpy(newNode->city, info[2]);
+        strcpy(newNode->product_id, info[4]);
+        strcpy(newNode->price, info[5]);
+        strcpy(newNode->quantity, info[6]);
+        strcpy(newNode->has_sold, info[7]);
+        newNode->next = NULL;
+        *head = newNode; 
+        return;
+    }
+    struct node *current = *head;
+    int flag = 0;
+    while(current->next != NULL){
+        if(strcmp(current->city, info[2]) == 0&& strcmp(current->product_id, info[4]) == 0){
+            char quantity[10];
+            intToStr(quantity, strToInt(current->quantity) + strToInt(info[6]));
+            strcpy(current->quantity, quantity);
+            char has_sold[10];
+            intToStr(has_sold, strToInt(current->has_sold) + strToInt(info[7]));
+            strcpy(current->has_sold, has_sold);
+            char price[12];
+            intToStr(price, (int)((strToInt(current->price)*strToInt(current->has_sold) + ((strToInt(info[7]) * strToInt(info[5]))))/ strToInt(current->has_sold)));
+            strcpy(current->price, price);
+            flag = 1;
+        }
+        current = current->next;
+    }
+    if( flag == 0){
+        struct node *newNode = (struct node*) malloc(sizeof(struct node));
+        strcpy(newNode->city, info[2]);
+        strcpy(newNode->product_id, info[4]);
+        strcpy(newNode->price, info[5]);
+        strcpy(newNode->quantity, info[6]);
+        strcpy(newNode->has_sold, info[7]);
+        newNode->next = NULL;
+        current->next = newNode;
+    }
+}
+
+void printList(struct node *head){
+    struct node *current = head;
+    int count=0;
+    while(current != NULL){
+        if(count<1200)
+        printf("%s   %s   %d \n", current->city, current->product_id, count++);
+        current = current->next;
+    }
+}
 /*
     in the main function we first make a database connection,
     then we try to find out the the name of files in the directory,
@@ -46,7 +134,6 @@ int main(int args, char *argv[]){
     PQfinish(conn);
     return 0;
 }
-
 
 /*
     with the help of this function we find out the number of directory files
@@ -95,7 +182,6 @@ void nameOfTheFiles(char *names[]){
 }
 
 
-
 void readAndWrite(int num, char *name[]){
     FILE *fp;
     // num varible shows the number of file so that this loop runs for each file, then read info of each file
@@ -103,6 +189,8 @@ void readAndWrite(int num, char *name[]){
         char str[240] = "/Users/amin/Desktop/fifth-internship-project/fifth-internship-project/tmp/final_project/";
         strcat(str, name[i]);
         if((*name[i]) == 'r'){
+            struct node *head = NULL;
+            char time[12];
             char buff[255];
             fp = fopen(str, "r");
             int temp=0;
@@ -120,13 +208,19 @@ void readAndWrite(int num, char *name[]){
                 if ( res == 0 ){
                     printf("this recorde = %s was ignored \n", buff);
                 }else {
+                    if(time[0] == '\0'){
+                        strcpy(time, info[0]);
+                    }
+                    addingNewNode(&head, info);
                     writingRecordsInto_fp_stores_dataTable(info);
-                    writingRecordsInto_fp_city_aggregationTable(info);
-                    writingRecordsInto_fp_store_aggregationTable(info);
+                    // writingRecordsInto_fp_city_aggregationTable(info);
+                     writingRecordsInto_fp_store_aggregationTable(info);
                 }
             }
+
+            // freeing up the memory
+            insertingInto_fp_city_aggregationTable(&head, time);
             fclose(fp);
-            return;
         }
     }
 }
@@ -389,3 +483,35 @@ void intToStr(char* str,int num){
     sprintf(str, "%d", num);
     return;
 }
+
+// void insertingInto_fp_city_aggregationTable(struct node **head, char *time){
+//     struct node *current = *head;
+//     if(current == NULL){
+//         return;
+//     }
+//     char string[50];
+//     while(current != NULL){
+//         string[0] = '\0';
+//         strcat(string, "INSERT INTO fp_city_aggregation VALUES(");
+//         strcat(string,time);
+//         strcat(string, " , '");
+//         strcat(string, current->city);
+//         strcat(string, "' , '");
+//         strcat(string, current->product_id);
+//         strcat(string, "' , ");
+//         strcat(string, current->price);
+//         strcat(string, " , ");
+//         strcat(string, current->quantity);
+//         strcat(string, " , ");
+//         strcat(string, current->has_sold);
+//         strcat(string, ")");
+//         PGresult *res = PQexec(conn, string);
+//         if (PQresultStatus(res) != PGRES_COMMAND_OK) {
+//             printf("it's really badd");
+//             PQclear(res);
+//             PQfinish(conn);
+//             exit(1);
+//         }  
+//         current = current->next;  
+//     }
+// }
